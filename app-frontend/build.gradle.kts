@@ -6,34 +6,20 @@ plugins {
 
 node {
     version.set("20.4.0")
-    npmVersion.set("9.8.0")
-
     download.set(true)
-
-    workDir.set(file("${project.buildDir}/nodejs"))
-    npmWorkDir.set(file("${project.buildDir}/npm"))
 }
 
-tasks.register<NpmTask>("appNpmInstall") {
-    workingDir.set(file("${project.projectDir}/src/main/webapp"))
-
-    args.set(listOf("install"))
-}
-
-tasks.register<NpmTask>("appNpmBuild") {
-    dependsOn("appNpmInstall")
-
-    workingDir.set(file("${project.projectDir}/src/main/webapp"))
+val buildTask = tasks.register<NpmTask>("buildReact") {
     args.set(listOf("run", "build"))
-}
+    dependsOn(tasks.npmInstall)
 
-tasks.register<Copy>("copyWebApp") {
-    dependsOn("appNpmBuild")
+    inputs.dir(project.fileTree("src"))
+    inputs.dir("node_modules")
+    inputs.files("tsconfig.json")
 
-    from("src/main/webapp/build")
-    into("build/resources/main/static/.")
+    outputs.dir(file("${project.buildDir}/frontend"))
 }
 
 tasks.withType<JavaCompile> {
-    dependsOn("copyWebApp")
+    dependsOn(buildTask)
 }
